@@ -33,6 +33,8 @@ public:
     DecimalColumnWriter(std::shared_ptr<TypeDescription> type,std::shared_ptr<PixelsWriterOption> writerOption);
     int write(std::shared_ptr<ColumnVector> vector, int length) override;
     bool decideNullsPadding(std::shared_ptr<PixelsWriterOption> writerOption) override;
+private:
+    std::vector<long> curPixelVector; // current pixel value vector haven't written out yet
 };
 
 #endif //DUCKDB_DECIMALCOLUMNWRITER_H
