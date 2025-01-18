@@ -31,7 +31,9 @@ int DecimalColumnWriter::write(std::shared_ptr<ColumnVector> vector,
     if (!columnVector) {
         throw std::invalid_argument("Invalid vector type");
     }
+
     long *values = columnVector->vector;
+
     for (int i = 0; i < length; i++) {
         isNull[curPixelIsNullIndex] = columnVector->isNull[i];
         std::shared_ptr<ByteBuffer> curVecPartitionBuffer;
@@ -39,14 +41,14 @@ int DecimalColumnWriter::write(std::shared_ptr<ColumnVector> vector,
         if (byteOrder == ByteOrder::PIXELS_LITTLE_ENDIAN) {
             if (nullsPadding) {
                 hasNull = true;
-                encodingUtils.writeLongLE(curVecPartitionBuffer, 0l);
+                encodingUtils.writeLongLE(curVecPartitionBuffer, 0L);
             } else {
                 encodingUtils.writeLongLE(outputStream, values[i]);
             }
         } else {
             if (nullsPadding) {
                 hasNull = true;
-                encodingUtils.writeLongBE(curVecPartitionBuffer, 0l);
+                encodingUtils.writeLongBE(curVecPartitionBuffer, 0L);
             } else {
                 encodingUtils.writeLongBE(outputStream, values[i]);
             }

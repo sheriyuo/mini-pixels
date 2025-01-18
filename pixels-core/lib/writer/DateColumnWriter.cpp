@@ -35,11 +35,11 @@ int DateColumnWriter::write(std::shared_ptr<ColumnVector> vector, int size) {
         throw std::invalid_argument("Invalid vector type");
     }
     int *dates = columnVector->dates;
-    int curPartLength; // size of the partition which belongs to current pixel
-    int curPartOffset =
-        0; // starting offset of the partition which belongs to current pixel
-    int nextPartLength =
-        size; // size of the partition which belongs to next pixel
+
+    int curPartLength; 
+    int curPartOffset = 0;
+    int nextPartLength = size;
+
     while ((curPixelIsNullIndex + nextPartLength) >= pixelStride) {
         curPartLength = pixelStride - curPixelIsNullIndex;
         writeCurPartTime(columnVector, dates, curPartLength, curPartOffset);
@@ -64,8 +64,7 @@ void DateColumnWriter::writeCurPartTime(
         if (columnVector->isNull[i + curPartOffset]) {
             hasNull = true;
             if (nullsPadding) {
-                // padding 0 for nulls
-                curPixelVector[curPixelVectorIndex++] = 0;
+                curPixelVector[curPixelVectorIndex++] = 0L;
             }
         } else {
             curPixelVector[curPixelVectorIndex++] = values[i + curPartOffset];
@@ -76,6 +75,15 @@ void DateColumnWriter::writeCurPartTime(
               isNull.begin() + curPixelIsNullIndex);
     curPixelIsNullIndex += curPartLength;
 }
+
+bool DateColumnWriter::decideNullsPadding(
+    std::shared_ptr<PixelsWriterOption> writerOption) {
+    if (writerOption->getEncodingLevel().ge(EncodingLevel::Level::EL2)) {
+        return false;
+    }
+    return writerOption->isNullsPadding();
+}
+
 void DateColumnWriter::newPixel() {
     if (runlengthEncoding) {
         std::vector<byte> buffer(curPixelVectorIndex * sizeof(int));
@@ -84,7 +92,6 @@ void DateColumnWriter::newPixel() {
                         curPixelVectorIndex, resLen);
         outputStream->putBytes(buffer.data(), resLen);
     } else {
-        std::cout << "no runlength encoding" << std::endl;
         std::shared_ptr<ByteBuffer> curVecPartitionBuffer;
         EncodingUtils encodingUtils;
         curVecPartitionBuffer =
@@ -117,12 +124,4 @@ pixels::proto::ColumnEncoding DateColumnWriter::getColumnChunkEncoding() {
             pixels::proto::ColumnEncoding::Kind::ColumnEncoding_Kind_NONE);
     }
     return encoding;
-}
-
-bool DateColumnWriter::decideNullsPadding(
-    std::shared_ptr<PixelsWriterOption> writerOption) {
-    if (writerOption->getEncodingLevel().ge(EncodingLevel::Level::EL2)) {
-        return false;
-    }
-    return writerOption->isNullsPadding();
 }

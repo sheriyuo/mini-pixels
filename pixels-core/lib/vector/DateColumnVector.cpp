@@ -9,12 +9,12 @@
 
 DateColumnVector::DateColumnVector(uint64_t len, bool encoding)
     : ColumnVector(len, encoding) {
-    if (encoding) {
-        posix_memalign(reinterpret_cast<void **>(&dates), 32,
-                       len * sizeof(int32_t));
-    } else {
-        this->dates = nullptr;
-    }
+    // if (encoding) {
+    posix_memalign(reinterpret_cast<void **>(&dates), 32,
+                    len * sizeof(int32_t));
+    // } else {
+    //     this->dates = nullptr;
+    // }
     memoryUsage += (long)sizeof(int) * len;
 }
 
@@ -53,6 +53,7 @@ void DateColumnVector::set(int elementNum, int days) {
     }
     dates[elementNum] = days;
     // TODO: isNull
+    isNull[elementNum] = false;
 }
 
 void *DateColumnVector::current() {

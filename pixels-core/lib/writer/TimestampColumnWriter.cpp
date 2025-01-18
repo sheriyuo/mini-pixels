@@ -37,11 +37,11 @@ int TimestampColumnWriter::write(std::shared_ptr<ColumnVector> vector,
         throw std::invalid_argument("Invalid vector type");
     }
     long *timestamps = columnVector->times;
-    int curPartLength; // size of the partition which belongs to current pixel
-    int curPartOffset =
-        0; // starting offset of the partition which belongs to current pixel
-    int nextPartLength =
-        size; // size of the partition which belongs to next pixel
+
+    int curPartLength;
+    int curPartOffset = 0;
+    int nextPartLength = size;
+
     while ((curPixelIsNullIndex + nextPartLength) >= pixelStride) {
         curPartLength = pixelStride - curPixelIsNullIndex;
         writeCurPartTimestamp(columnVector, timestamps, curPartLength,
@@ -65,7 +65,7 @@ void TimestampColumnWriter::writeCurPartTimestamp(
     int curPartOffset) {
     for (int i = 0; i < curPartLength; i++) {
         if (columnVector->isNull[i + curPartOffset]) {
-            curPixelVector[curPixelVectorIndex++] = 0;
+            curPixelVector[curPixelVectorIndex++] = 0L;
         } else {
             curPixelVector[curPixelVectorIndex++] = values[i + curPartOffset];
         }
@@ -76,6 +76,14 @@ void TimestampColumnWriter::writeCurPartTimestamp(
     curPixelIsNullIndex += curPartLength;
 }
 
+bool TimestampColumnWriter::decideNullsPadding(
+    std::shared_ptr<PixelsWriterOption> writerOption) {
+    if (writerOption->getEncodingLevel().ge(EncodingLevel::Level::EL2)) {
+        return false;
+    }
+    return writerOption->isNullsPadding();
+}
+
 void TimestampColumnWriter::newPixel() {
     if (runlengthEncoding) {
         std::vector<byte> buffer(curPixelVectorIndex * sizeof(int));
@@ -84,7 +92,6 @@ void TimestampColumnWriter::newPixel() {
                         curPixelVectorIndex, resLen);
         outputStream->putBytes(buffer.data(), resLen);
     } else {
-        std::cout << "no runlength encoding" << std::endl;
         std::shared_ptr<ByteBuffer> curVecPartitionBuffer;
         EncodingUtils encodingUtils;
         curVecPartitionBuffer =
@@ -117,12 +124,4 @@ pixels::proto::ColumnEncoding TimestampColumnWriter::getColumnChunkEncoding() {
             pixels::proto::ColumnEncoding::Kind::ColumnEncoding_Kind_NONE);
     }
     return columnEncoding;
-}
-
-bool TimestampColumnWriter::decideNullsPadding(
-    std::shared_ptr<PixelsWriterOption> writerOption) {
-    if (writerOption->getEncodingLevel().ge(EncodingLevel::Level::EL2)) {
-        return false;
-    }
-    return writerOption->isNullsPadding();
 }

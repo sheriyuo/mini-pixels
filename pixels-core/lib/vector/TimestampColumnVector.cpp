@@ -3,8 +3,8 @@
 //
 
 #include "vector/TimestampColumnVector.h"
-#include <stdio.h>
 #include <ctime>
+#include <stdio.h>
 
 TimestampColumnVector::TimestampColumnVector(int precision, bool encoding)
     : ColumnVector(VectorizedRowBatch::DEFAULT_SIZE, encoding) {
@@ -16,12 +16,12 @@ TimestampColumnVector::TimestampColumnVector(uint64_t len, int precision,
                                              bool encoding)
     : ColumnVector(len, encoding) {
     this->precision = precision;
-    if (encoding) {
-        posix_memalign(reinterpret_cast<void **>(&this->times), 64,
-                       len * sizeof(long));
-    } else {
-        this->times = nullptr;
-    }
+    // if (encoding) {
+    posix_memalign(reinterpret_cast<void **>(&this->times), 64,
+                   len * sizeof(long));
+    // } else {
+    //     this->times = nullptr;
+    // }
 }
 
 void TimestampColumnVector::close() {
